@@ -1,0 +1,3 @@
+record_id,reference,business_date,amount,currency,direction
+a1,REF001,2026-10-01,100.00,INR,CREDIT
+a2,REF002,2026-10-01,250.50,INR,DEBIT
