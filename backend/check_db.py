@@ -1,17 +1,24 @@
 import getpass
+import os
 import psycopg
 
-password = getpass.getpass("PostgreSQL password: ")
+previous = os.environ.get("PGPASSWORD")
+os.environ["PGPASSWORD"] = getpass.getpass("PostgreSQL password: ")
 
-with psycopg.connect(
-    host="127.0.0.1",
-    port=5434,
-    dbname="reconexus",
-    user="reconexus",
-    password=password,
-    connect_timeout=5,
-) as conn:
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT current_database(), current_user")
-        print("Connection successful:", cursor.fetchone())
-
+try:
+    with psycopg.connect(
+        host="127.0.0.1",
+        port=5434,
+        dbname="reconexus",
+        user="reconexus",
+        connect_timeout=5,
+    ) as conn:
+        result = conn.execute(
+            "SELECT current_database(), current_user"
+        ).fetchone()
+        print("Connection successful:", result)
+finally:
+    if previous is None:
+        os.environ.pop("PGPASSWORD", None)
+    else:
+        os.environ["PGPASSWORD"] = previous
