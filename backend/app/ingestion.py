@@ -62,7 +62,7 @@ def ingest_csv(
         actor = conn.execute(
             """
             SELECT role, active FROM users
-            WHERE id = %s FOR SHARE
+            WHERE id = %s
             """,
             (actor_id,),
         ).fetchone()
@@ -72,9 +72,17 @@ def ingest_csv(
         ):
             raise PermissionError("Active ingestion-authorized user required")
 
+        # Stable source-specific lock, released automatically on commit/rollback.
+        lock_key = int.from_bytes(
+            hashlib.sha256(source_id.bytes).digest()[:8],
+            byteorder="big",
+            signed=True,
+        )
+        conn.execute("SELECT pg_advisory_xact_lock(%s)", (lock_key,))
+
         # Serialize imports for this source to prevent concurrent duplicates.
         source = conn.execute(
-            "SELECT id FROM sources WHERE id = %s FOR UPDATE",
+            "SELECT id FROM sources WHERE id = %s",
             (source_id,),
         ).fetchone()
         if source is None:
